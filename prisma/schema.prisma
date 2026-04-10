@@ -76,3 +76,17 @@ model VerificationToken {
 
   @@id([identifier, token])
 }
+
+model AuthRateLimit{
+  key String @id
+  scope String
+  attempts Int @default(0)
+  windowStart DateTime
+  blockedUntil DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([scope])
+  @@index([blockedUntil])
+
+}
