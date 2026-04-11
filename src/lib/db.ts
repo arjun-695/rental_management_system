@@ -1,15 +1,30 @@
+import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@/generated/prisma";
 
-// Next.js hot reload can create many Prisma instances.
-// We cache one global instance to prevent connection exhaustion
-declare global {
-  // eslint-disable-next-line no-var
-  var prisma: PrismaClient | undefined;
+const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
+
+function buildAdapter(): PrismaMariaDb {
+  const raw = process.env.DATABASE_URL;
+  if (!raw) throw new Error("DATABASE_URL is missing");
+
+  const url = new URL(raw);
+  if (url.protocol !== "mysql:") {
+    throw new Error("DATABASE_URL must start with mysql://");
+  }
+
+  return new PrismaMariaDb({
+    host: url.hostname,
+    port: Number(url.port || 3306),
+    user: decodeURIComponent(url.username),
+    password: decodeURIComponent(url.password),
+    database: url.pathname.replace(/^\//, ""),
+    connectionLimit: 10,
+  });
 }
 
-// Explicit type ensures every consumer gets a PrismaClient.
-export const prisma: PrismaClient = global.prisma ?? new PrismaClient();
+export const prisma: PrismaClient =
+  globalForPrisma.prisma ?? new PrismaClient({ adapter: buildAdapter() });
 
 if (process.env.NODE_ENV !== "production") {
-  global.prisma = prisma;
+  globalForPrisma.prisma = prisma;
 }
