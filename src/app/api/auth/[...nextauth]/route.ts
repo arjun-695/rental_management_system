@@ -40,7 +40,7 @@ const LOGIN_EMAIL_POLICY: RateLimitPolicy = {
 };
 
 function getIpFromHeaders(
-  headers: Record<string, string | string[] | undefined> | undefined
+  headers: Record<string, string | string[] | undefined> | undefined,
 ): string {
   if (!headers) return "unknown";
 
@@ -69,100 +69,101 @@ const providers: NextAuthOptions["providers"] = [
       password: { label: "Password", type: "password" },
     },
 
-      async authorize(credentials, req): Promise<CredentialsUser  | null> {
-        const headers = req?.headers as
-          HeaderMap | undefined;
+    async authorize(credentials, req): Promise<CredentialsUser | null> {
+      const headers = req?.headers as HeaderMap | undefined;
 
+      const ip = getIpFromHeaders(headers);
 
-        const ip = getIpFromHeaders(headers);
+      const ipLimit = await consumeRateLimit({
+        scope: "login_ip",
+        identifier: ip,
+        policy: LOGIN_IP_POLICY,
+      });
 
-        const ipLimit = await consumeRateLimit({
-          scope: "login_ip",
-          identifier: ip,
-          policy: LOGIN_IP_POLICY,
-        });
+      // Return null so attacker does not get detailed reason.
+      if (!ipLimit.allowed) return null;
 
-        // Return null so attacker does not get detailed reason.
-        if (!ipLimit.allowed) return null;
+      const parsed = credentialsSignInSchema.safeParse(credentials);
+      if (!parsed.success) return null;
 
-        const parsed = credentialsSignInSchema.safeParse(credentials);
-        if (!parsed.success) return null;
+      const { email, password } = parsed.data;
 
-        const { email, password } = parsed.data;
+      const emailLimit = await consumeRateLimit({
+        scope: "login_email",
+        identifier: email,
+        policy: LOGIN_EMAIL_POLICY,
+      });
 
-        const emailLimit = await consumeRateLimit({
-          scope: "login_email",
-          identifier: email,
-          policy: LOGIN_EMAIL_POLICY,
-        });
+      if (!emailLimit.allowed) return null;
 
-        if (!emailLimit.allowed) return null;
+      const user = await prisma.user.findUnique({
+        where: { email },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          role: true,
+          age: true,
+          passwordHash: true,
+        },
+      });
 
-        const user = await prisma.user.findUnique({
-          where: { email },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-            role: true,
-            age: true,
-            passwordHash: true,
-          },
-        });
+      // Generic null return avoids user-enumeration leakage.
+      if (!user?.passwordHash) return null;
 
-        // Generic null return avoids user-enumeration leakage.
-        if (!user?.passwordHash) return null;
+      const passwordValid = await compare(password, user.passwordHash);
+      if (!passwordValid) return null;
 
-        const passwordValid = await compare(password, user.passwordHash);
-        if (!passwordValid) return null;
+      // On successful login, clear counters for this email and source IP.
+      await resetRateLimit("login_email", email);
+      await resetRateLimit("login_ip", ip);
 
-        // On successful login, clear counters for this email and source IP.
-        await resetRateLimit("login_email", email);
-        await resetRateLimit("login_ip", ip);
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+        role: user.role as AppRole,
+        age: user.age,
+      };
+    },
+  }),
+];
 
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          image: user.image,
-          role: user.role as AppRole,
-          age: user.age,
-        };
-      },
-    }),
-  ],
-
-  if (googleClientId && googleClientSecret) {
+if (googleClientId && googleClientSecret) {
   providers.push(
     GoogleProvider({
       clientId: googleClientId,
       clientSecret: googleClientSecret,
-    })
+    }),
   );
 }
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   // DB sessions allow server-side revocation and security audits later.
-  session: { strategy: "database" },
+  session: { strategy: "jwt" },
   pages: {
     signIn: "/sign-in",
   },
   providers,
   callbacks: {
-    async session({ session, user }) {
-      // Fetch custom columns because AdapterUser type does not include role/age.
-      const dbUser = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: { role: true, age: true },
-      });
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.role =(user.role as AppRole) ?? "TENANT";
+        token.age = (user.age as number | null) ?? null;
+      }
+      return token;
+    },
 
+    async session({ session, token }) {
       // Merge custom fields into session.user.
       if (session.user) {
-        session.user.id = user.id;
-        session.user.role = (dbUser?.role ?? "TENANT") as AppRole;
-        session.user.age = dbUser?.age ?? null;
+        session.user.id = (token.id as string) ?? "";
+        session.user.role = (token.role as AppRole) ?? "TENANT";
+        session.user.age = (token.age as number | null) ?? null;
       }
 
       return session;
