@@ -1,4 +1,6 @@
 import 'next-auth'
+import type { DefaultSession } from "next-auth";
+type AppRole = "TENANT" | "OWNER" | "ADMIN";
 
 declare module 'next-auth' {
     interface Session{
@@ -6,11 +8,11 @@ declare module 'next-auth' {
             id: string;
             role: "TENANT" | "OWNER" | "ADMIN";
             age: number | null;
-        } & Session["user"]
+        } & DefaultSession["user"];
     }
 
     interface User{
-        role: "TENANT" | "OWNER" | "ADMIN";
+        role: AppRole;
         age: number | null;
     }
 }

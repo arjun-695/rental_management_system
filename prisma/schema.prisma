@@ -89,3 +89,8 @@ model AuthRateLimit{
   @@index([blockedUntil])
 
 }
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}

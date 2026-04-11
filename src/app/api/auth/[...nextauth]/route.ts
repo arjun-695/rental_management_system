@@ -15,7 +15,7 @@ import {
 
 type AppRole = "TENANT" | "OWNER" | "ADMIN";
 
-type AppUser = {
+type CredentialsUser = {
   id: string;
   name: string;
   email: string;
@@ -25,11 +25,7 @@ type AppUser = {
   passwordHash?: string | null;
 };
 
-type ExtendedJWT = JWT & {
-  id?: string;
-  role?: AppRole;
-  age?: number | null;
-};
+type HeaderMap = Record<string, string | string[] | undefined>;
 
 const LOGIN_IP_POLICY: RateLimitPolicy = {
   windowMs: 15 * 60_000,
@@ -53,42 +49,30 @@ function getIpFromHeaders(
     return forwarded.split(",")[0]?.trim() || "unknown";
   }
 
-  const real = headers["x-real-ip"];
-  if (typeof real === "string") {
-    return real.trim();
+  const realIp = headers["x-real-ip"];
+  if (typeof realIp === "string") {
+    return realIp.trim();
   }
 
   return "unknown";
 }
 
-export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+const googleClientId = process.env.GOOGLE_CLIENT_ID;
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
-  // Database sessions are better for admin/security controls (revocation/auditing).
-  session: { strategy: "database" },
+// Keep providers typed and conditionally include Google when env keys exist.
+const providers: NextAuthOptions["providers"] = [
+  CredentialsProvider({
+    name: "credentials",
+    credentials: {
+      email: { label: "Email", type: "email" },
+      password: { label: "Password", type: "password" },
+    },
 
-  pages: {
-    // Keep this in sync with your actual page path.
-    signIn: "/sign-in",
-  },
-
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-    }),
-
-    CredentialsProvider({
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-
-      async authorize(credentials, req): Promise<AppUser | null> {
+      async authorize(credentials, req): Promise<CredentialsUser  | null> {
         const headers = req?.headers as
-          | Record<string, string | string[] | undefined>
-          | undefined;
+          HeaderMap | undefined;
+
 
         const ip = getIpFromHeaders(headers);
 
@@ -127,11 +111,13 @@ export const authOptions: NextAuthOptions = {
           },
         });
 
+        // Generic null return avoids user-enumeration leakage.
         if (!user?.passwordHash) return null;
 
         const passwordValid = await compare(password, user.passwordHash);
         if (!passwordValid) return null;
 
+        // On successful login, clear counters for this email and source IP.
         await resetRateLimit("login_email", email);
         await resetRateLimit("login_ip", ip);
 
@@ -147,27 +133,36 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
 
+  if (googleClientId && googleClientSecret) {
+  providers.push(
+    GoogleProvider({
+      clientId: googleClientId,
+      clientSecret: googleClientSecret,
+    })
+  );
+}
+
+export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma),
+  // DB sessions allow server-side revocation and security audits later.
+  session: { strategy: "database" },
+  pages: {
+    signIn: "/sign-in",
+  },
+  providers,
   callbacks: {
-    async jwt({ token, user }): Promise<JWT> {
-      const t = token as ExtendedJWT;
+    async session({ session, user }) {
+      // Fetch custom columns because AdapterUser type does not include role/age.
+      const dbUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { role: true, age: true },
+      });
 
-      if (user) {
-        const u = user as AppUser;
-        t.id = u.id;
-        t.role = u.role;
-        t.age = u.age ?? null;
-      }
-
-      return t;
-    },
-
-    async session({ session, token }) {
-      const t = token as ExtendedJWT;
-
+      // Merge custom fields into session.user.
       if (session.user) {
-        session.user.id = t.id ?? "";
-        session.user.role = t.role ?? "TENANT";
-        session.user.age = t.age ?? null;
+        session.user.id = user.id;
+        session.user.role = (dbUser?.role ?? "TENANT") as AppRole;
+        session.user.age = dbUser?.age ?? null;
       }
 
       return session;
