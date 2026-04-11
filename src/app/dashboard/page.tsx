@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireAuth } from "@/lib/auth-guard";
 
-export default async function DashboardRouterPage(): Promise<never> {
+export default async function DashboardRouterPage(): Promise<any> {
   const session = await requireAuth();
 
   if (session.user.role === "OWNER") redirect("/owner");
