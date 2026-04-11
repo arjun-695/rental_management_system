@@ -58,5 +58,5 @@ export const credentialsSignInSchema = z
 
 // Inferred types provide end-to-end type safety in route handlers and services.
 
-export type SignupSchema = z.infer<typeof signupSchema>;
+export type SignupInput = z.infer<typeof signupSchema>;
 export type CredentialsSignInSchema = z.infer<typeof credentialsSignInSchema>;

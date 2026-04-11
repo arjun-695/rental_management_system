@@ -1,5 +1,6 @@
 import { createHash } from "crypto";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@/generated/prisma";
 
 // Keep scopes explicit for type safety and to avoid typo bugs.
 
@@ -46,7 +47,7 @@ export async function consumeRateLimit(
   const now = new Date();
   const key = buildKey(input.scope, input.identifier);
 
-  return prisma.$transaction(async (tx): Promise<RateLimitResult> => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient): Promise<RateLimitResult> => {
     const row = await tx.authRateLimit.findUnique({ where: { key } });
 
     if (!row) {
