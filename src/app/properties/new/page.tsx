@@ -6,7 +6,7 @@ type CreatePropertyResponse =
   | { ok: true; data: { id: string } }
   | { ok: false; error: string };
 
-export default function NewPropertyPage(): JSX.Element {
+export default function NewPropertyPage(): any {
   const [message, setMessage] = useState<string>("");
 
   async function onSubmit(
