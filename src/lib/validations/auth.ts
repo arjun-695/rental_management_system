@@ -42,6 +42,7 @@ const emailSchema = z
       .int("Age must be a whole number.")
       .min(18, "You must be at least 18 years old.")
       .max(120, "Please enter a valid age."),
+    role: z.enum(["TENANT", "OWNER"]).default("TENANT"),
     password: passwordSchema,
   })
   .strict();

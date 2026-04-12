@@ -4,8 +4,9 @@ import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
+
 type SignupFieldErrors = Partial<
-  Record<"name" | "age" | "email" | "password", string[]>
+  Record<"name" | "age" | "email" | "role" | "password", string[]>
 >;
 
 type SignupApiResponse =
@@ -26,12 +27,16 @@ export default function SignUpForm() {
   const [password, setPassword] = useState<string>("");
   const [message, setMessage] = useState<string>("");
   const [fieldErrors, setFieldErrors] = useState<SignupFieldErrors>({});
+  const [role, setRole] = useState<"TENANT" | "OWNER">("TENANT");
+
 
   async function onSubmit(
     event: React.FormEvent<HTMLFormElement>,
   ): Promise<void> {
     event.preventDefault();
     setMessage("");
+    setFieldErrors({});
+
     const response = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -39,6 +44,7 @@ export default function SignUpForm() {
         name,
         age: Number(age),
         email,
+        role,
         password,
       }),
     });
@@ -109,6 +115,17 @@ export default function SignUpForm() {
       />
       {fieldErrors.email?.[0] ? <p className="text-sm text-red-600">{fieldErrors.email[0]}</p> : null}
 
+      <select
+        className="rounded border p-2"
+        value={role}
+        onChange={(event) => setRole(event.target.value as "TENANT" | "OWNER")}
+        required
+      >
+        <option value="TENANT">Tenant</option>
+        <option value="OWNER">Owner</option>
+      </select>
+      {fieldErrors.role?.[0] ? <p className="text-sm text-red-600">{fieldErrors.role[0]}</p> : null}
+
       <input
         className="rounded border p-2"
         type="password"
@@ -122,7 +139,6 @@ export default function SignUpForm() {
       <button className="rounded bg-black p-2 text-white" type="submit">
         Create account
       </button>
-
       {message ? <p className="text-sm text-red-600">{message}</p> : null}
 
       <p className="text-sm">

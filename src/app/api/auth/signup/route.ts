@@ -9,7 +9,7 @@ import {
 } from "@/lib/security/auth-rate-limit";
 
 type SignupFieldErrors = Partial<
-  Record<"name" | "age" | "email" | "password", string[]>
+  Record<"name" | "age" | "email" | "role" |"password", string[]>
 >;
 
 type SignupResponse =
@@ -137,6 +137,7 @@ export async function POST(request: Request): Promise<Response> {
         name: data.name,
         email: data.email,
         age: data.age,
+        role: data.role,
         passwordHash,
       },
     });
