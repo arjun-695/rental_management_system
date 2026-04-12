@@ -1,6 +1,7 @@
 import { requireRole } from "@/lib/auth-guard";
-import { LayoutDashboard, Key, CalendarClock } from "lucide-react";
+import { LayoutDashboard, Key, CalendarClock, Settings2 } from "lucide-react";
 import AnimatedBackground from "@/components/landing/animated-background";
+import SwitchRoleButton from "@/components/auth/switch-role-button";
 
 export default async function TenantPage(): Promise<any> {
   const session = await requireRole(["TENANT"]);
@@ -40,6 +41,21 @@ export default async function TenantPage(): Promise<any> {
             </div>
             <h3 className="text-lg font-semibold text-foreground">Browse Properties</h3>
             <p className="mt-1 text-sm text-muted-foreground">Search to find your next home.</p>
+          </div>
+        </div>
+
+        <div className="mt-4 glass-card rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-indigo-500/10">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/5 border border-white/10">
+              <Settings2 className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Own a property?</h3>
+              <p className="text-sm text-muted-foreground">Switch to an Owner account to start listing your properties.</p>
+            </div>
+          </div>
+          <div className="w-full sm:w-auto min-w-[200px]">
+            <SwitchRoleButton targetRole="OWNER" />
           </div>
         </div>
       </div>
