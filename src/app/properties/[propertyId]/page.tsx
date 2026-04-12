@@ -1,147 +1,145 @@
-"use client";
+import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { prisma } from "@/lib/db";
+import { authOptions } from "@/lib/auth/auth-options";
+import CreateBookingForm from "@/components/bookings/create-booking-form";
+import AnimatedBackground from "@/components/landing/animated-background";
+import { MapPin, Home, Bed, Bath, ArrowLeft, Calendar, User } from "lucide-react";
 
-import { useState } from "react";
+export default async function PropertyDetailsPage({
+  params,
+}: {
+  params: Promise<{ propertyId: string }>;
+}): Promise<any> {
+  const { propertyId } = await params;
 
-type CreatePropertyResponse =
-  | { ok: true; data: { id: string } }
-  | { ok: false; error: string };
+  const property = await prisma.property.findUnique({
+    where: { id: propertyId },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      city: true,
+      state: true,
+      type: true,
+      bedrooms: true,
+      bathrooms: true,
+      monthlyRent: true,
+      availableFrom: true,
+      owner: { select: { name: true } },
+    },
+  });
 
-export default function NewPropertyPage(): any {
-  const [message, setMessage] = useState<string>("");
-
-  async function onSubmit(
-    event: React.FormEvent<HTMLFormElement>,
-  ): Promise<void> {
-    event.preventDefault();
-    setMessage("");
-
-    const formData = new FormData(event.currentTarget);
-    const payload = {
-      title: String(formData.get("title") ?? ""),
-      description: String(formData.get("description") ?? ""),
-      city: String(formData.get("city") ?? ""),
-      state: String(formData.get("state") ?? ""),
-      country: String(formData.get("country") ?? "India"),
-      addressLine1: String(formData.get("addressLine1") ?? ""),
-      postalCode: String(formData.get("postalCode") ?? ""),
-      type: String(formData.get("type") ?? ""),
-      bedrooms: Number(formData.get("bedrooms") ?? 0),
-      bathrooms: Number(formData.get("bathrooms") ?? 0),
-      monthlyRent: Number(formData.get("monthlyRent") ?? 0),
-      availableFrom: String(formData.get("availableFrom") ?? ""),
-    };
-
-    const response = await fetch("/api/properties", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const body = (await response.json()) as CreatePropertyResponse;
-
-    if (!response.ok || !body.ok) {
-      setMessage(body.ok ? "Could not create property" : body.error);
-      return;
-    }
-
-    setMessage(`Property created. ID: ${body.data.id}`);
-    event.currentTarget.reset();
+  if (!property) {
+    return (
+      <main className="relative min-h-screen dark flex flex-col items-center justify-center">
+        <AnimatedBackground />
+        <div className="glass-card z-10 p-8 rounded-2xl text-center">
+          <p className="text-lg font-medium text-muted-foreground mb-4">Property not found.</p>
+          <Link href="/properties" className="text-indigo-400 hover:text-indigo-300 underline">Back to listings</Link>
+        </div>
+      </main>
+    );
   }
 
+  const session = await getServerSession(authOptions);
+
   return (
-    <main className="mx-auto w-full max-w-2xl p-6">
-      <h1 className="mb-4 text-2xl font-semibold">Add New Property</h1>
+    <main className="relative min-h-screen dark py-8">
+      <AnimatedBackground />
+      <div className="z-10 mx-auto w-full max-w-5xl px-6 animate-fade-in-up">
+        
+        <Link href="/properties" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-indigo-400 transition-colors mb-6">
+          <ArrowLeft className="h-4 w-4" /> Back to listings
+        </Link>
 
-      <form
-        onSubmit={onSubmit}
-        className="grid grid-cols-1 gap-3 rounded border p-4"
-      >
-        <input
-          name="title"
-          placeholder="Title"
-          className="rounded border p-2"
-          required
-        />
-        <textarea
-          name="description"
-          placeholder="Description"
-          className="rounded border p-2"
-          required
-        />
-        <input
-          name="city"
-          placeholder="City"
-          className="rounded border p-2"
-          required
-        />
-        <input
-          name="state"
-          placeholder="State"
-          className="rounded border p-2"
-          required
-        />
-        <input
-          name="country"
-          placeholder="Country"
-          defaultValue="India"
-          className="rounded border p-2"
-          required
-        />
-        <input
-          name="addressLine1"
-          placeholder="Address line 1"
-          className="rounded border p-2"
-          required
-        />
-        <input
-          name="postalCode"
-          placeholder="Postal code"
-          className="rounded border p-2"
-          required
-        />
-        <select name="type" className="rounded border p-2" required>
-          <option value="APARTMENT">Apartment</option>
-          <option value="HOUSE">House</option>
-          <option value="STUDIO">Studio</option>
-          <option value="VILLA">Villa</option>
-          <option value="PG">PG</option>
-        </select>
-        <input
-          name="bedrooms"
-          type="number"
-          min={0}
-          placeholder="Bedrooms"
-          className="rounded border p-2"
-          required
-        />
-        <input
-          name="bathrooms"
-          type="number"
-          min={1}
-          placeholder="Bathrooms"
-          className="rounded border p-2"
-          required
-        />
-        <input
-          name="monthlyRent"
-          type="number"
-          min={1}
-          placeholder="Monthly rent"
-          className="rounded border p-2"
-          required
-        />
-        <input
-          name="availableFrom"
-          type="date"
-          className="rounded border p-2"
-          required
-        />
-        <button type="submit" className="rounded bg-black p-2 text-white">
-          Create Property
-        </button>
-      </form>
+        <div className="grid gap-8 md:grid-cols-3">
+          
+          <div className="md:col-span-2 space-y-6">
+            <div className="glass-card rounded-2xl p-8 border-indigo-500/10 shadow-xl">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/5 px-3 py-1 text-xs font-medium text-indigo-400">
+                <Home className="h-3.5 w-3.5" /> {property.type}
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight mb-2">{property.title}</h1>
+              <div className="flex items-center text-muted-foreground text-sm mb-6">
+                <MapPin className="mr-1.5 h-4 w-4" /> {property.city}, {property.state}
+              </div>
+              
+              <div className="flex flex-wrap gap-4 mb-8">
+                <div className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-4 py-2">
+                  <Bed className="h-5 w-5 text-indigo-400" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Bedrooms</p>
+                    <p className="font-semibold">{property.bedrooms}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-4 py-2">
+                  <Bath className="h-5 w-5 text-violet-400" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Bathrooms</p>
+                    <p className="font-semibold">{property.bathrooms}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-4 py-2">
+                  <Calendar className="h-5 w-5 text-emerald-400" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Available from</p>
+                    <p className="font-semibold">{property.availableFrom.toLocaleDateString()}</p>
+                  </div>
+                </div>
+              </div>
 
-      {message ? <p className="mt-3 text-sm">{message}</p> : null}
+              <h3 className="text-lg font-semibold mb-2">Description</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                {property.description}
+              </p>
+
+              <div className="mt-8 pt-6 border-t border-border/50 flex flex-wrap gap-6 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-500 text-white font-bold text-xs shadow-lg">
+                    {property.owner.name[0]}
+                  </div>
+                  <div>
+                    <span className="block text-xs text-muted-foreground">Listed by Owner</span>
+                    <span className="font-medium text-foreground">{property.owner.name}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="md:col-span-1">
+            <div className="glass-card rounded-2xl p-6 sticky top-24 border-indigo-500/20 shadow-2xl">
+              <div className="mb-6">
+                <p className="text-sm text-muted-foreground">Monthly Rent</p>
+                <div className="flex items-end gap-1">
+                  <span className="text-3xl font-extrabold text-indigo-400">
+                    ₹{Number(property.monthlyRent).toLocaleString("en-IN")}
+                  </span>
+                </div>
+              </div>
+
+              {session?.user?.role === "TENANT" ? (
+                <CreateBookingForm propertyId={property.id} />
+              ) : !session?.user ? (
+                <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
+                  <p className="text-sm text-muted-foreground mb-3">Sign in as a tenant to book this property</p>
+                  <Link href="/sign-in" className="block w-full rounded-lg bg-indigo-600 py-2 text-sm font-semibold text-white transition-all hover:bg-indigo-500">
+                    Sign In
+                  </Link>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-center">
+                  <p className="text-sm text-amber-500">
+                    Only tenants can book properties.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+          
+        </div>
+      </div>
     </main>
   );
 }

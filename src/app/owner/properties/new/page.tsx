@@ -1,6 +1,8 @@
 "use client";
-
 import { useState } from "react";
+import AnimatedBackground from "@/components/landing/animated-background";
+import { MapPin, Info, ArrowLeft, Home, FileText, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
 
 type CreatePropertyResponse =
   | { ok: true; data: { id: string } }
@@ -8,10 +10,12 @@ type CreatePropertyResponse =
 
 export default function NewPropertyPage(): any {
   const [message, setMessage] = useState<string>("");
+  const [isSuccess, setIsSuccess] = useState<boolean>(false);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setMessage("");
+    setIsSuccess(false);
 
     const formData = new FormData(event.currentTarget);
     const payload = {
@@ -42,37 +46,123 @@ export default function NewPropertyPage(): any {
       return;
     }
 
-    setMessage(`Property created. ID: ${body.data.id}`);
+    setIsSuccess(true);
+    setMessage(`Property created successfully! Reference ID: ${body.data.id}`);
     event.currentTarget.reset();
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl p-6">
-      <h1 className="mb-4 text-2xl font-semibold">Add New Property</h1>
+    <main className="relative min-h-screen dark py-8">
+      <AnimatedBackground />
+      <div className="z-10 mx-auto w-full max-w-3xl px-6 animate-fade-in-up">
+        
+        <Link href="/owner" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-emerald-400 transition-colors mb-6">
+          <ArrowLeft className="h-4 w-4" /> Back to Dashboard
+        </Link>
+        
+        <header className="mb-6 border-b border-border/50 pb-6">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Add New Property</h1>
+          <p className="text-muted-foreground mt-1">List a new property for prospective tenants to discover.</p>
+        </header>
 
-      <form onSubmit={onSubmit} className="grid grid-cols-1 gap-3 rounded border p-4">
-        <input name="title" placeholder="Title" className="rounded border p-2" required />
-        <textarea name="description" placeholder="Description" className="rounded border p-2" required />
-        <input name="city" placeholder="City" className="rounded border p-2" required />
-        <input name="state" placeholder="State" className="rounded border p-2" required />
-        <input name="country" placeholder="Country" defaultValue="India" className="rounded border p-2" required />
-        <input name="addressLine1" placeholder="Address line 1" className="rounded border p-2" required />
-        <input name="postalCode" placeholder="Postal code" className="rounded border p-2" required />
-        <select name="type" className="rounded border p-2" required>
-          <option value="APARTMENT">Apartment</option>
-          <option value="HOUSE">House</option>
-          <option value="STUDIO">Studio</option>
-          <option value="VILLA">Villa</option>
-          <option value="PG">PG</option>
-        </select>
-        <input name="bedrooms" type="number" min={0} placeholder="Bedrooms" className="rounded border p-2" required />
-        <input name="bathrooms" type="number" min={1} placeholder="Bathrooms" className="rounded border p-2" required />
-        <input name="monthlyRent" type="number" min={1} placeholder="Monthly rent" className="rounded border p-2" required />
-        <input name="availableFrom" type="date" className="rounded border p-2" required />
-        <button type="submit" className="rounded bg-black p-2 text-white">Create Property</button>
-      </form>
+        {message && (
+          <div className={`mb-6 rounded-xl p-4 flex items-start gap-3 border ${isSuccess ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
+            {isSuccess ? <CheckCircle2 className="h-5 w-5 mt-0.5 shrink-0" /> : <Info className="h-5 w-5 mt-0.5 shrink-0" />}
+            <div>
+              <p className="font-medium">{isSuccess ? "Success" : "Error"}</p>
+              <p className="text-sm opacity-90">{message}</p>
+            </div>
+          </div>
+        )}
 
-      {message ? <p className="mt-3 text-sm">{message}</p> : null}
+        <form onSubmit={onSubmit} className="glass-card flex flex-col gap-8 rounded-2xl p-8 shadow-xl shadow-emerald-500/5 border-emerald-500/10">
+          
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground">
+              <FileText className="h-5 w-5 text-emerald-400" /> Basic Information
+            </h3>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground ml-1">Title</label>
+              <input name="title" placeholder="E.g. Cozy 2BHK in South Mumbai" className="w-full rounded-xl border border-border/50 bg-background/50 py-2.5 px-4 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" required />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground ml-1">Description</label>
+              <textarea name="description" rows={4} placeholder="Describe the key features, amenities, and nearby locations..." className="w-full rounded-xl border border-border/50 bg-background/50 py-2.5 px-4 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 resize-y" required />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground border-t border-border/50 pt-6">
+              <MapPin className="h-5 w-5 text-emerald-400" /> Location Details
+            </h3>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground ml-1">Address Line 1</label>
+              <input name="addressLine1" placeholder="Street Name, Building" className="w-full rounded-xl border border-border/50 bg-background/50 py-2.5 px-4 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" required />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground ml-1">City</label>
+                <input name="city" placeholder="Mumbai" className="w-full rounded-xl border border-border/50 bg-background/50 py-2.5 px-4 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" required />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground ml-1">State</label>
+                <input name="state" placeholder="Maharashtra" className="w-full rounded-xl border border-border/50 bg-background/50 py-2.5 px-4 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" required />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground ml-1">Postal Code</label>
+                <input name="postalCode" placeholder="400001" className="w-full rounded-xl border border-border/50 bg-background/50 py-2.5 px-4 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" required />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground ml-1">Country</label>
+                <input name="country" placeholder="Country" defaultValue="India" className="w-full text-muted-foreground cursor-not-allowed rounded-xl border border-border/50 bg-background/30 py-2.5 px-4 text-sm outline-none" readOnly />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground border-t border-border/50 pt-6">
+              <Home className="h-5 w-5 text-emerald-400" /> Property Details
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground ml-1">Property Type</label>
+                <select name="type" className="w-full rounded-xl border border-border/50 bg-background/50 py-2.5 px-4 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" required>
+                  <option value="APARTMENT">Apartment</option>
+                  <option value="HOUSE">House</option>
+                  <option value="STUDIO">Studio</option>
+                  <option value="VILLA">Villa</option>
+                  <option value="PG">PG</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground ml-1">Available From</label>
+                <input name="availableFrom" type="date" className="w-full rounded-xl border border-border/50 bg-background/50 py-2.5 px-4 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" required />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground ml-1">Bedrooms</label>
+                <input name="bedrooms" type="number" min={0} placeholder="2" className="w-full rounded-xl border border-border/50 bg-background/50 py-2.5 px-4 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" required />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground ml-1">Bathrooms</label>
+                <input name="bathrooms" type="number" min={1} placeholder="2" className="w-full rounded-xl border border-border/50 bg-background/50 py-2.5 px-4 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" required />
+              </div>
+            </div>
+            <div className="space-y-1 pt-2">
+              <label className="text-xs font-medium text-muted-foreground ml-1">Monthly Rent (₹)</label>
+              <div className="relative">
+                <span className="absolute left-4 top-[11px] text-muted-foreground font-medium">₹</span>
+                <input name="monthlyRent" type="number" min={1} placeholder="25000" className="w-full rounded-xl border border-border/50 bg-background/50 py-2.5 pl-8 pr-4 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" required />
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4">
+            <button type="submit" className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-emerald-500/40">
+              Publish Listing
+            </button>
+          </div>
+        </form>
+      </div>
     </main>
   );
 }
