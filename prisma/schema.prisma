@@ -18,6 +18,13 @@ enum UserRole {
   ADMIN
 }
 
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+
 enum PropertyType {
   APARTMENT
   HOUSE
@@ -46,6 +53,9 @@ model User {
   accounts      Account[]
   sessions      Session[]
   properties    Property[] // Owner relationship for property module.
+
+  bookings Booking[] @relation("TenantBookings")
+
 }
 
 
@@ -129,4 +139,28 @@ model Property {
   @@index([city, status])
   @@index([monthlyRent])
   @@index([availableFrom])
+
+  bookings Booking[]
+
+}
+
+model Booking {
+  id            String        @id @default(cuid())
+  propertyId    String
+  tenantId      String
+  checkIn       DateTime
+  checkOut      DateTime
+  guests        Int           @default(1)
+  nights        Int
+  pricePerNight Decimal       @db.Decimal(10, 2)
+  totalAmount   Decimal       @db.Decimal(10, 2)
+  status        BookingStatus @default(PENDING)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant   User     @relation("TenantBookings", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId, checkIn, checkOut])
+  @@index([tenantId, createdAt])
 }
