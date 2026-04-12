@@ -2,22 +2,30 @@
 import { useState } from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+
+type SignupFieldErrors = Partial<
+  Record<"name" | "age" | "email" | "password", string[]>
+>;
 
 type SignupApiResponse =
   | { ok: true; message: string }
   | {
       ok: false;
-      code: "INVALID_INPUT" | "RATE_LIMITED" | "INTERNAL_ERROR";
+      code: "INVALID_INPUT" | "RATE_LIMITED" | "INTERNAL_ERROR"| "EMAIL_ALREADY_EXISTS";
       message: string;
       retryAfterSeconds?: number;
+      fieldErrors?: SignupFieldErrors;
     };
 
 export default function SignUpForm() {
+  const router = useRouter();
   const [name, setName] = useState<string>("");
   const [age, setAge] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [message, setMessage] = useState<string>("");
+  const [fieldErrors, setFieldErrors] = useState<SignupFieldErrors>({});
 
   async function onSubmit(
     event: React.FormEvent<HTMLFormElement>,
@@ -36,6 +44,17 @@ export default function SignUpForm() {
     });
 
     const body = (await response.json()) as SignupApiResponse; // parse the response
+
+    // Redirect to sign-in on success (201 new account or 202 anti-enumeration path).
+    if (body.ok) {
+      router.push(`/sign-in?registered=1&email=${encodeURIComponent(email)}`);
+      return;
+    }
+
+    if (body.fieldErrors) {
+      setFieldErrors(body.fieldErrors);
+    }
+
     setMessage(body.message); // set the message
 
     // Auto-login only when a new account is actually created.
@@ -68,6 +87,7 @@ export default function SignUpForm() {
         onChange={(event) => setName(event.target.value)}
         required
       />
+      {fieldErrors.name?.[0] ? <p className="text-sm text-red-600">{fieldErrors.name[0]}</p> : null}
 
       <input
         className="rounded border p-2"
@@ -77,6 +97,7 @@ export default function SignUpForm() {
         onChange={(event) => setAge(event.target.value)}
         required
       />
+      {fieldErrors.age?.[0] ? <p className="text-sm text-red-600">{fieldErrors.age[0]}</p> : null}
 
       <input
         className="rounded border p-2"
@@ -86,6 +107,7 @@ export default function SignUpForm() {
         onChange={(event) => setEmail(event.target.value)}
         required
       />
+      {fieldErrors.email?.[0] ? <p className="text-sm text-red-600">{fieldErrors.email[0]}</p> : null}
 
       <input
         className="rounded border p-2"
@@ -95,6 +117,7 @@ export default function SignUpForm() {
         onChange={(event) => setPassword(event.target.value)}
         required
       />
+      {fieldErrors.password?.[0] ? <p className="text-sm text-red-600">{fieldErrors.password[0]}</p> : null}
 
       <button className="rounded bg-black p-2 text-white" type="submit">
         Create account

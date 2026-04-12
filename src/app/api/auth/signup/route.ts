@@ -8,6 +8,10 @@ import {
   type RateLimitPolicy,
 } from "@/lib/security/auth-rate-limit";
 
+type SignupFieldErrors = Partial<
+  Record<"name" | "age" | "email" | "password", string[]>
+>;
+
 type SignupResponse =
   | { ok: true; message: string }
   | {
@@ -15,6 +19,7 @@ type SignupResponse =
       code: "INVALID_INPUT" | "RATE_LIMITED" | "INTERNAL_ERROR";
       message: string;
       retryAfterSeconds?: number;
+      fieldErrors?: SignupFieldErrors;
     };
 
 const SIGNUP_IP_POLICY: RateLimitPolicy = {
@@ -76,11 +81,13 @@ export async function POST(request: Request): Promise<Response> {
     const parsed = signupSchema.safeParse(rawBody);
 
     if (!parsed.success) {
+      const flattened = parsed.error.flatten().fieldErrors as SignupFieldErrors;
       return json(
         {
           ok: false,
           code: "INVALID_INPUT",
           message: "Invalid signup data.",
+          fieldErrors: flattened,
         },
         400
       );
