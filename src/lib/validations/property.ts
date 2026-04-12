@@ -16,8 +16,7 @@ export const createPropertySchema = z
     areaSqft: z.coerce.number().int().min(50).max(50000).optional(),
     monthlyRent: z.coerce.number().positive().max(1_000_000),
     securityDeposit: z.coerce.number().min(0).max(10_000_000).optional(),
-    coverImageUrl: z.url().optional(),
-    coverImagePublicId: z.string().trim().min(1).max(255).optional(),
+    imageUrls: z.array(z.string().url()).optional().default([]),
     availableFrom: z.coerce.date(),
   })
   .strict();

@@ -11,10 +11,10 @@ import {
   ImagePlus,
   Info,
   MapPin,
-  UploadCloud,
 } from "lucide-react";
 
 import AnimatedBackground from "@/components/landing/animated-background";
+import ImageUploadWidget from "@/components/properties/image-upload-widget";
 
 type CreatePropertyResponse =
   | { ok: true; data: { id: string } }
@@ -30,72 +30,14 @@ type UploadImageResponse =
 export default function NewPropertyPage(): JSX.Element {
   const [message, setMessage] = useState<string>("");
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
-  const [uploadedImage, setUploadedImage] = useState<{
-    imageUrl: string;
-    imagePublicId: string;
-  } | null>(null);
-  const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (!selectedImage) {
-      setImagePreviewUrl(null);
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(selectedImage);
-    setImagePreviewUrl(objectUrl);
-
-    return () => {
-      URL.revokeObjectURL(objectUrl);
-    };
-  }, [selectedImage]);
-
-  async function uploadSelectedImage(file: File): Promise<{
-    imageUrl: string;
-    imagePublicId: string;
-  } | null> {
-    setIsUploadingImage(true);
-
-    try {
-      const body = new FormData();
-      body.append("image", file);
-
-      const response = await fetch("/api/uploads/property-image", {
-        method: "POST",
-        body,
-      });
-
-      const payload = (await response.json()) as UploadImageResponse;
-
-      if (!response.ok || !payload.ok) {
-        setMessage(payload.ok ? "Image upload failed." : payload.error);
-        setIsSuccess(false);
-        return null;
-      }
-
-      return payload.data;
-    } finally {
-      setIsUploadingImage(false);
-    }
-  }
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setMessage("");
     setIsSuccess(false);
-
-    let imagePayload = uploadedImage;
-
-    // Upload image first so property stores stable Cloudinary URL/publicId.
-    if (selectedImage && !uploadedImage) {
-      const uploaded = await uploadSelectedImage(selectedImage);
-      if (!uploaded) return;
-
-      imagePayload = uploaded;
-      setUploadedImage(uploaded);
-    }
+    setIsSubmitting(true);
 
     const formData = new FormData(event.currentTarget);
     const payload = {
@@ -111,28 +53,30 @@ export default function NewPropertyPage(): JSX.Element {
       bathrooms: Number(formData.get("bathrooms") ?? 0),
       monthlyRent: Number(formData.get("monthlyRent") ?? 0),
       availableFrom: String(formData.get("availableFrom") ?? ""),
-      coverImageUrl: imagePayload?.imageUrl,
-      coverImagePublicId: imagePayload?.imagePublicId,
+      imageUrls: imageUrls,
     };
 
-    const response = await fetch("/api/properties", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const response = await fetch("/api/properties", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    const body = (await response.json()) as CreatePropertyResponse;
+      const body = (await response.json()) as CreatePropertyResponse;
 
-    if (!response.ok || !body.ok) {
-      setMessage(body.ok ? "Could not create property" : body.error);
-      return;
+      if (!response.ok || !body.ok) {
+        setMessage(body.ok ? "Could not create property" : body.error);
+        return;
+      }
+
+      setIsSuccess(true);
+      setMessage(`Property created successfully! Reference ID: ${body.data.id}`);
+      setImageUrls([]);
+      event.currentTarget.reset();
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSuccess(true);
-    setMessage(`Property created successfully! Reference ID: ${body.data.id}`);
-    setSelectedImage(null);
-    setUploadedImage(null);
-    event.currentTarget.reset();
   }
 
   return (
@@ -179,29 +123,13 @@ export default function NewPropertyPage(): JSX.Element {
         >
           <div className="space-y-4">
             <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground">
-              <ImagePlus className="h-5 w-5 text-emerald-400" /> Property Photo
+              <ImagePlus className="h-5 w-5 text-emerald-400" /> Property Photos
             </h3>
-            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-500/30 bg-emerald-500/5 px-4 py-4 text-sm text-emerald-300 hover:bg-emerald-500/10">
-              <UploadCloud className="h-4 w-4" />
-              <span>{selectedImage ? selectedImage.name : "Choose cover image (optional)"}</span>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(event) => {
-                  const file = event.target.files?.[0] ?? null;
-                  setSelectedImage(file);
-                  setUploadedImage(null);
-                }}
-              />
-            </label>
-            {imagePreviewUrl ? (
-              <img
-                src={imagePreviewUrl}
-                alt="Property preview"
-                className="h-52 w-full rounded-xl object-cover"
-              />
-            ) : null}
+            <ImageUploadWidget
+              value={imageUrls}
+              onChange={setImageUrls}
+              maxFiles={10}
+            />
           </div>
 
           <div className="space-y-4">
@@ -350,10 +278,10 @@ export default function NewPropertyPage(): JSX.Element {
           <div className="pt-4">
             <button
               type="submit"
-              disabled={isUploadingImage}
+              disabled={isSubmitting}
               className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-emerald-500/40 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {isUploadingImage ? "Uploading image..." : "Publish Listing"}
+              {isSubmitting ? "Publishing Listing..." : "Publish Listing"}
             </button>
           </div>
         </form>

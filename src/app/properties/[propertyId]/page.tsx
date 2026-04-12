@@ -25,7 +25,7 @@ export default async function PropertyDetailsPage({
       bedrooms: true,
       bathrooms: true,
       monthlyRent: true,
-      coverImageUrl: true,
+      imageUrls: true,
       availableFrom: true,
       owner: { select: { name: true } },
     },
@@ -58,12 +58,32 @@ export default async function PropertyDetailsPage({
           
           <div className="md:col-span-2 space-y-6">
             <div className="glass-card rounded-2xl p-8 border-indigo-500/10 shadow-xl">
-              {property.coverImageUrl ? (
-                <img
-                  src={property.coverImageUrl}
-                  alt={property.title}
-                  className="mb-6 h-72 w-full rounded-xl object-cover"
-                />
+              {Array.isArray(property.imageUrls) && property.imageUrls.length > 0 ? (
+                <div className="mb-6 space-y-4">
+                  {/* Hero / First Image */}
+                  <div className="relative h-[400px] w-full overflow-hidden rounded-2xl shadow-lg border border-border/10">
+                    <img
+                      src={property.imageUrls[0] as string}
+                      alt={property.title}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  </div>
+                  
+                  {/* Rest of the gallery */}
+                  {property.imageUrls.length > 1 && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {(property.imageUrls as string[]).slice(1).map((url, i) => (
+                        <div key={i} className="relative aspect-square overflow-hidden rounded-xl border border-border/10">
+                          <img
+                            src={url}
+                            alt={`${property.title} room ${i + 1}`}
+                            className="absolute inset-0 h-full w-full object-cover transition-transform hover:scale-105"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ) : null}
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/5 px-3 py-1 text-xs font-medium text-indigo-400">
                 <Home className="h-3.5 w-3.5" /> {property.type}

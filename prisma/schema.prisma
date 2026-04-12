@@ -128,8 +128,8 @@ model Property {
   areaSqft          Int?
   monthlyRent       Decimal        @db.Decimal(10, 2)
   securityDeposit   Decimal?       @db.Decimal(10, 2)
-  coverImageUrl     String?
-  coverImagePublicId String?
+  imageUrls         Json?
+
   availableFrom     DateTime
   status            PropertyStatus @default(ACTIVE)
   createdAt         DateTime       @default(now())
@@ -165,4 +165,27 @@ model Booking {
 
   @@index([propertyId, checkIn, checkOut])
   @@index([tenantId, createdAt])
+
+  payment Payment?
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  bookingId         String        @unique
+  amount            Decimal       @db.Decimal(10, 2)
+  currency          String        @default("INR")
+  razorpayOrderId   String        @unique
+  razorpayPaymentId String?       @unique
+  razorpaySignature String?       @db.Text
+  status            PaymentStatus @default(PENDING)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 }

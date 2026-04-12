@@ -1,8 +1,9 @@
 import { requireRole } from "@/lib/auth-guard";
 import { prisma } from "@/lib/db";
 import AnimatedBackground from "@/components/landing/animated-background";
-import { CalendarClock, MapPin, Users, ArrowRight } from "lucide-react";
+import { CalendarClock, MapPin, Users, ArrowRight, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
+import RazorpayButton from "@/components/payments/razorpay-button";
 
 export default async function TenantBookingsPage(): Promise<any> {
   const session = await requireRole(["TENANT"]);
@@ -18,6 +19,7 @@ export default async function TenantBookingsPage(): Promise<any> {
       status: true,
       totalAmount: true,
       property: { select: { id: true, title: true, city: true } },
+      payment: { select: { status: true } }
     },
   });
 
@@ -68,9 +70,18 @@ export default async function TenantBookingsPage(): Promise<any> {
               <div className="flex flex-col justify-between items-start md:items-end md:border-l border-border/50 md:pl-6">
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Total Amount</p>
-                  <p className="text-xl font-bold text-indigo-400">
+                  <p className="text-xl font-bold text-indigo-400 mb-3">
                     ₹{Number(row.totalAmount).toLocaleString("en-IN")}
                   </p>
+                  
+                  {row.status === "CONFIRMED" && (!row.payment || row.payment.status === "PENDING" || row.payment.status === "FAILED") && (
+                    <RazorpayButton bookingId={row.id} />
+                  )}
+                  {row.payment?.status === "SUCCESS" && (
+                    <div className="flex items-center gap-1.5 text-sm font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg">
+                      <CheckCircle2 className="h-4 w-4" /> Paid
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -69,30 +69,6 @@ export default function LandingContent() {
     <>
       <AnimatedBackground />
 
-      {/* ───── Navbar ───── */}
-      <header className="fixed top-0 z-50 w-full">
-        <nav className="glass-card mx-auto flex h-16 w-full max-w-6xl items-center justify-between rounded-b-2xl px-6">
-          <Link href="/" className="flex items-center gap-2 font-bold text-lg tracking-tight">
-            <Home className="h-5 w-5 text-indigo-500" />
-            <span>RentEase</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/sign-in"
-              className="rounded-lg border border-white/20 px-4 py-2 text-sm font-medium transition-all duration-300 hover:border-indigo-400 hover:bg-indigo-500/10 hover:shadow-lg hover:shadow-indigo-500/10"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/sign-up"
-              className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-indigo-500/40"
-            >
-              Get Started
-            </Link>
-          </div>
-        </nav>
-      </header>
-
       {/* ───── Hero ───── */}
       <section className="relative flex min-h-screen items-center justify-center overflow-hidden pt-16">
         {/* Decorative blobs */}

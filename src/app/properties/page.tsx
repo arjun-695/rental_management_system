@@ -35,7 +35,7 @@ export default async function PropertiesPage({
       select: {
         id: true,
         title: true,
-        coverImageUrl: true,
+        imageUrls: true,
         city: true,
         state: true,
         type: true,
@@ -109,9 +109,9 @@ export default async function PropertiesPage({
             href={`/properties/${row.id}`}
             className="group glass-card flex flex-col rounded-2xl p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/10 hover:border-indigo-500/30"
           >
-            {row.coverImageUrl ? (
+            {Array.isArray(row.imageUrls) && row.imageUrls.length > 0 ? (
               <img
-                src={row.coverImageUrl}
+                src={row.imageUrls[0] as string}
                 alt={row.title}
                 className="mb-4 h-40 w-full rounded-xl border border-white/5 object-cover"
                 loading="lazy"
