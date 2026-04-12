@@ -19,6 +19,7 @@ export const metadata: Metadata = {
 };
 
 import { Providers } from "@/components/providers/session-provider";
+import RoleAwareNavbar from "@/components/Layout/role-aware-navbar";
 
 export default function RootLayout({
   children,
@@ -31,7 +32,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
       <body className="min-h-full flex flex-col">
-        <Providers>{children}</Providers>
+        <Providers>
+          <RoleAwareNavbar />
+          {children}
+        </Providers>
       </body>
     </html>
   );
