@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { authOptions } from "@/lib/auth/auth-options";
 import CreateBookingForm from "@/components/bookings/create-booking-form";
 import AnimatedBackground from "@/components/landing/animated-background";
-import { MapPin, Home, Bed, Bath, ArrowLeft, Calendar, User } from "lucide-react";
+import { MapPin, Home, Bed, Bath, ArrowLeft, Calendar, User, Star } from "lucide-react";
 
 export default async function PropertyDetailsPage({
   params,
@@ -26,6 +26,17 @@ export default async function PropertyDetailsPage({
       bathrooms: true,
       monthlyRent: true,
       imageUrls: true,
+      averageRating: true,
+      reviews: {
+        select: {
+          id: true,
+          rating: true,
+          comment: true,
+          createdAt: true,
+          tenant: { select: { name: true, image: true } }
+        },
+        orderBy: { createdAt: "desc" }
+      },
       availableFrom: true,
       owner: { select: { name: true } },
     },
@@ -88,7 +99,15 @@ export default async function PropertyDetailsPage({
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/5 px-3 py-1 text-xs font-medium text-indigo-400">
                 <Home className="h-3.5 w-3.5" /> {property.type}
               </div>
-              <h1 className="text-3xl font-bold tracking-tight mb-2">{property.title}</h1>
+              <div className="flex flex-wrap items-center justify-between mb-2">
+                <h1 className="text-3xl font-bold tracking-tight">{property.title}</h1>
+                {property.averageRating ? (
+                  <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 text-amber-400">
+                    <span className="font-bold text-sm">{Number(property.averageRating).toFixed(1)}</span>
+                    <Star className="h-4 w-4 fill-current" />
+                  </div>
+                ) : null}
+              </div>
               <div className="flex items-center text-muted-foreground text-sm mb-6">
                 <MapPin className="mr-1.5 h-4 w-4" /> {property.city}, {property.state}
               </div>
@@ -133,6 +152,45 @@ export default async function PropertyDetailsPage({
                   </div>
                 </div>
               </div>
+
+              {property.reviews.length > 0 && (
+                <div className="mt-8 pt-8 border-t border-border/50">
+                  <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                    <Star className="h-5 w-5 text-amber-400 fill-current" />
+                    Guest Reviews
+                  </h3>
+                  <div className="space-y-6">
+                    {property.reviews.map((review) => (
+                      <div key={review.id} className="rounded-xl border border-white/5 bg-white/5 p-5">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-violet-600 text-white text-[10px] font-bold">
+                              {review.tenant.name[0]}
+                            </div>
+                            <span className="font-medium text-sm">{review.tenant.name}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {review.createdAt.toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 mb-3">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star 
+                              key={star} 
+                              className={`h-3.5 w-3.5 ${star <= review.rating ? 'text-amber-400 fill-current' : 'text-white/10'}`} 
+                            />
+                          ))}
+                        </div>
+                        {review.comment && (
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            "{review.comment}"
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

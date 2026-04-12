@@ -4,6 +4,7 @@ import AnimatedBackground from "@/components/landing/animated-background";
 import { CalendarClock, MapPin, Users, ArrowRight, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import RazorpayButton from "@/components/payments/razorpay-button";
+import LeaveReviewButton from "@/components/reviews/leave-review-button";
 
 export default async function TenantBookingsPage(): Promise<any> {
   const session = await requireRole(["TENANT"]);
@@ -19,7 +20,8 @@ export default async function TenantBookingsPage(): Promise<any> {
       status: true,
       totalAmount: true,
       property: { select: { id: true, title: true, city: true } },
-      payment: { select: { status: true } }
+      payment: { select: { status: true } },
+      review: { select: { id: true } }
     },
   });
 
@@ -84,6 +86,12 @@ export default async function TenantBookingsPage(): Promise<any> {
                   )}
                 </div>
               </div>
+              
+              {row.status === "CONFIRMED" && row.payment?.status === "SUCCESS" && !row.review && (
+                <div className="mt-4 border-t border-border/50 pt-4 w-full flex justify-end md:col-span-2">
+                  <LeaveReviewButton bookingId={row.id} propertyTitle={row.property.title} />
+                </div>
+              )}
             </div>
           ))}
 

@@ -55,6 +55,7 @@ model User {
   properties    Property[] // Owner relationship for property module.
 
   bookings Booking[] @relation("TenantBookings")
+  reviews  Review[]  @relation("TenantReviews")
 
 }
 
@@ -143,6 +144,8 @@ model Property {
   @@index([availableFrom])
 
   bookings Booking[]
+  reviews  Review[]
+  averageRating Decimal? @db.Decimal(3, 2)
 
 }
 
@@ -167,6 +170,7 @@ model Booking {
   @@index([tenantId, createdAt])
 
   payment Payment?
+  review  Review?
 }
 
 enum PaymentStatus {
@@ -188,4 +192,22 @@ model Payment {
   updatedAt         DateTime      @updatedAt
 
   booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  propertyId  String
+  tenantId    String
+  bookingId   String   @unique
+  rating      Int      @db.SmallInt
+  comment     String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant   User     @relation("TenantReviews", fields: [tenantId], references: [id], onDelete: Cascade)
+  booking  Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId, rating])
+  @@index([tenantId])
 }
