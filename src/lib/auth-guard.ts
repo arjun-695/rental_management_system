@@ -2,13 +2,16 @@ import { getServerSession } from "next-auth";
 import type { Session } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
+import type { AppRole } from "@/types/next-auth";
 
-type AppRole = "TENANT" | "OWNER" | "ADMIN";
+const ROLE_HOME: Record<AppRole, string> = {
+  ADMIN: "/admin",
+  OWNER: "/owner",
+  TENANT: "/tenant",
+};
 
-function roleHome(role: AppRole): "/tenant" | "/owner" | "/admin" {
-  if (role === "OWNER") return "/owner";
-  if (role === "ADMIN") return "/admin";
-  return "/tenant";
+function roleHome(role: AppRole): string {
+  return ROLE_HOME[role];
 }
 
 export async function requireAuth(): Promise<Session> {

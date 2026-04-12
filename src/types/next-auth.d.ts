@@ -1,6 +1,8 @@
 import 'next-auth'
 import type { DefaultSession } from "next-auth";
-type AppRole = "TENANT" | "OWNER" | "ADMIN";
+import "next-auth/jwt";
+
+export type AppRole = "TENANT" | "OWNER" | "ADMIN";
 
 declare module 'next-auth' {
     interface Session{
@@ -14,5 +16,13 @@ declare module 'next-auth' {
     interface User{
         role: AppRole;
         age: number | null;
+    }
+}
+
+declare module "next-auth/jwt"{
+    interface JWT{
+        id?: string;
+        role?: AppRole;
+        age?: number | null;
     }
 }
