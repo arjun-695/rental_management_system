@@ -59,5 +59,5 @@ export async function middleware(request: NextRequest) {
 }
 // The matcher already excludes static assets — no need to re-check inside middleware
 export const config = {
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

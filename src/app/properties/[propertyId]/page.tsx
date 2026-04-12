@@ -25,6 +25,7 @@ export default async function PropertyDetailsPage({
       bedrooms: true,
       bathrooms: true,
       monthlyRent: true,
+      coverImageUrl: true,
       availableFrom: true,
       owner: { select: { name: true } },
     },
@@ -57,6 +58,13 @@ export default async function PropertyDetailsPage({
           
           <div className="md:col-span-2 space-y-6">
             <div className="glass-card rounded-2xl p-8 border-indigo-500/10 shadow-xl">
+              {property.coverImageUrl ? (
+                <img
+                  src={property.coverImageUrl}
+                  alt={property.title}
+                  className="mb-6 h-72 w-full rounded-xl object-cover"
+                />
+              ) : null}
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/5 px-3 py-1 text-xs font-medium text-indigo-400">
                 <Home className="h-3.5 w-3.5" /> {property.type}
               </div>

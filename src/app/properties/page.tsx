@@ -35,6 +35,7 @@ export default async function PropertiesPage({
       select: {
         id: true,
         title: true,
+        coverImageUrl: true,
         city: true,
         state: true,
         type: true,
@@ -103,14 +104,23 @@ export default async function PropertiesPage({
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {rows.map((row) => (
-            <Link
-              key={row.id}
-              href={`/properties/${row.id}`}
-              className="group glass-card flex flex-col rounded-2xl p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/10 hover:border-indigo-500/30"
-            >
+          <Link
+            key={row.id}
+            href={`/properties/${row.id}`}
+            className="group glass-card flex flex-col rounded-2xl p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/10 hover:border-indigo-500/30"
+          >
+            {row.coverImageUrl ? (
+              <img
+                src={row.coverImageUrl}
+                alt={row.title}
+                className="mb-4 h-40 w-full rounded-xl border border-white/5 object-cover"
+                loading="lazy"
+              />
+            ) : (
               <div className="mb-4 flex h-40 w-full items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-600/10 border border-white/5">
                 <Home className="h-10 w-10 text-indigo-400 opacity-50" />
               </div>
+            )}
               <div className="flex-1">
                 <h2 className="text-lg font-bold group-hover:text-indigo-400 transition-colors">{row.title}</h2>
                 <div className="mt-1 flex items-center text-sm text-muted-foreground">

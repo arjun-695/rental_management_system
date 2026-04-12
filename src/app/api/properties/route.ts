@@ -38,6 +38,7 @@ export async function GET(request: Request): Promise<Response> {
       select: {
         id: true,
         title: true,
+        coverImageUrl: true,
         city: true,
         state: true,
         type: true,
@@ -100,6 +101,8 @@ export async function POST(request: Request): Promise<Response> {
       areaSqft: input.areaSqft,
       monthlyRent: input.monthlyRent,
       securityDeposit: input.securityDeposit,
+      coverImageUrl: input.coverImageUrl,
+      coverImagePublicId: input.coverImagePublicId,
       availableFrom: input.availableFrom,
       status: "ACTIVE",
     },

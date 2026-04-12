@@ -36,6 +36,8 @@ export async function GET(
       areaSqft: true,
       monthlyRent: true,
       securityDeposit: true,
+      coverImageUrl: true,
+      coverImagePublicId: true,
       availableFrom: true,
       status: true,
       ownerId: true,

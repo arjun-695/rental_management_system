@@ -12,6 +12,7 @@ const NAV_LINKS: Record<AppRole, NavLink[]> = {
   OWNER: [
     { href: "/owner", label: "Dashboard" },
     { href: "/owner/properties/new", label: "Add Property" },
+    { href: "/owner/bookings", label: "Requests" },
     { href: "/properties", label: "All Listings" },
   ],
   ADMIN: [

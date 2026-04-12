@@ -27,21 +27,21 @@ export default async function OwnerPage(): Promise<any> {
         </header>
 
         <div className="grid gap-6 md:grid-cols-3">
-          <div className="glass-card rounded-2xl p-6 shadow-xl shadow-emerald-500/5">
+          <Link href="/properties" className="glass-card rounded-2xl p-6 shadow-xl shadow-emerald-500/5 block hover:border-emerald-400/30 transition-colors">
             <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
               <Building2 className="h-5 w-5" />
             </div>
             <h3 className="text-lg font-semibold text-foreground">My Properties</h3>
             <p className="mt-1 text-sm text-muted-foreground">Manage your existing property listings.</p>
-          </div>
+          </Link>
 
-          <div className="glass-card rounded-2xl p-6 shadow-xl shadow-teal-500/5">
+          <Link href="/owner/bookings" className="glass-card rounded-2xl p-6 shadow-xl shadow-teal-500/5 block hover:border-teal-400/30 transition-colors">
             <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-teal-500/10 text-teal-400">
               <Users className="h-5 w-5" />
             </div>
             <h3 className="text-lg font-semibold text-foreground">Booking Requests</h3>
             <p className="mt-1 text-sm text-muted-foreground">View and approve tenant requests.</p>
-          </div>
+          </Link>
         </div>
 
         <div className="mt-4 glass-card rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-emerald-500/10">

@@ -128,6 +128,8 @@ model Property {
   areaSqft          Int?
   monthlyRent       Decimal        @db.Decimal(10, 2)
   securityDeposit   Decimal?       @db.Decimal(10, 2)
+  coverImageUrl     String?
+  coverImagePublicId String?
   availableFrom     DateTime
   status            PropertyStatus @default(ACTIVE)
   createdAt         DateTime       @default(now())
