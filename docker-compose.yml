@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  database:
+    image: mysql:8.0
+    container_name: rent_ease_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: rental_management
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rent_ease_app
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - database
+    environment:
+      # Inject the connection string to route DB queries from App container -> DB container internally.
+      # Note: using 'database' here correlates to the service name directly!
+      DATABASE_URL: "mysql://root:root@database:3306/rental_management"
+      NEXTAUTH_URL: "http://localhost:3000"
+      NEXTAUTH_SECRET: "my_super_secret_jwt_string_123!"
+      # Fill with actual keys from .env when deploying:
+      GOOGLE_CLIENT_ID: ""
+      GOOGLE_CLIENT_SECRET: ""
+      CLOUDINARY_CLOUD_NAME: ""
+      CLOUDINARY_API_KEY: ""
+      CLOUDINARY_API_SECRET: ""
+      NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: ""
+      NEXT_PUBLIC_CLOUDINARY_API_KEY: ""
+      NEXT_PUBLIC_RAZORPAY_KEY_ID: ""
+      RAZORPAY_KEY_SECRET: ""
+
+volumes:
+  db_data:
