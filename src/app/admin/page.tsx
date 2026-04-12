@@ -1,4 +1,4 @@
-import SignOutButton from "@/components/ui/auth/sign-out-button";
+import SignOutButton from "@/components/auth/sign-out-button";
 import { requireRole } from "@/lib/auth-guard";
 
 export default async function AdminPage(): Promise<any> {

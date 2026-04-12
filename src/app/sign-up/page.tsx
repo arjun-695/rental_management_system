@@ -1,5 +1,5 @@
 import { redirectIfAuthenticated } from "@/lib/auth-guard";
-import SignUpForm from "@/components/ui/auth/sign-up-form";
+import SignUpForm from "@/components/auth/sign-up-form";
 
 export default async function SignUpPage(): Promise<any> {
   await redirectIfAuthenticated();

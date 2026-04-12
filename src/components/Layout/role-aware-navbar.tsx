@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/auth-options";
-import SignOutButton from "@/components/ui/auth/sign-out-button";
+import SignOutButton from "@/components/auth/sign-out-button";
 import type { AppRole } from "@/types/next-auth";
 
 // ─── Per-role navigation links ───────────────────────────────

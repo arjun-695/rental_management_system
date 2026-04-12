@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth/auth-options";
 import { JSX } from "react";
 
-export default async function HomePage(): Promise<JSX.Element> {
+export default async function HomePage(): Promise<any> {
   const session = await getServerSession(authOptions);
 
   return (
