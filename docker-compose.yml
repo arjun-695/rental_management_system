@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   database:
@@ -6,39 +5,48 @@ services:
     container_name: rent_ease_db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: rental_management
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-rental_management}
     ports:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   app:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: ${NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME:-}
+        NEXT_PUBLIC_CLOUDINARY_API_KEY: ${NEXT_PUBLIC_CLOUDINARY_API_KEY:-}
+        NEXT_PUBLIC_RAZORPAY_KEY_ID: ${NEXT_PUBLIC_RAZORPAY_KEY_ID:-}
     container_name: rent_ease_app
     restart: always
     ports:
       - "3000:3000"
     depends_on:
-      - database
+      database:
+        condition: service_healthy
     environment:
       # Inject the connection string to route DB queries from App container -> DB container internally.
       # Note: using 'database' here correlates to the service name directly!
-      DATABASE_URL: "mysql://root:root@database:3306/rental_management"
-      NEXTAUTH_URL: "http://localhost:3000"
-      NEXTAUTH_SECRET: "my_super_secret_jwt_string_123!"
-      # Fill with actual keys from .env when deploying:
-      GOOGLE_CLIENT_ID: ""
-      GOOGLE_CLIENT_SECRET: ""
-      CLOUDINARY_CLOUD_NAME: ""
-      CLOUDINARY_API_KEY: ""
-      CLOUDINARY_API_SECRET: ""
-      NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: ""
-      NEXT_PUBLIC_CLOUDINARY_API_KEY: ""
-      NEXT_PUBLIC_RAZORPAY_KEY_ID: ""
-      RAZORPAY_KEY_SECRET: ""
+      DATABASE_URL: "mysql://root:${MYSQL_ROOT_PASSWORD:-root}@database:3306/${MYSQL_DATABASE:-rental_management}"
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-change-me-before-production}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: ${NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME:-}
+      NEXT_PUBLIC_CLOUDINARY_API_KEY: ${NEXT_PUBLIC_CLOUDINARY_API_KEY:-}
+      NEXT_PUBLIC_RAZORPAY_KEY_ID: ${NEXT_PUBLIC_RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
 
 volumes:
   db_data:

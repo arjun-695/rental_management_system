@@ -1,5 +1,5 @@
 # 1. Install dependencies only when needed
-FROM node:18-alpine AS deps
+FROM node:20-alpine AS deps
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
@@ -9,29 +9,38 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 # 2. Rebuild the source code only when needed
-FROM node:18-alpine AS builder
-RUN apk add --no-cache openssl
+FROM node:20-alpine AS builder
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Needs a dummy database URL during build stages where connecting to DB isn't necessary
+ENV DATABASE_URL=mysql://dummy:dummy@dummy:3306/dummy
+ARG NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=""
+ARG NEXT_PUBLIC_CLOUDINARY_API_KEY=""
+ARG NEXT_PUBLIC_RAZORPAY_KEY_ID=""
+ENV NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=$NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+ENV NEXT_PUBLIC_CLOUDINARY_API_KEY=$NEXT_PUBLIC_CLOUDINARY_API_KEY
+ENV NEXT_PUBLIC_RAZORPAY_KEY_ID=$NEXT_PUBLIC_RAZORPAY_KEY_ID
+
 # Generate Prisma Client specifically targeted for the container's OS architecture
 RUN npx prisma generate
 
 # Next.js telemetry is disabled during build
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # Build Next.js application
 RUN npm run build
 
 # 3. Production image, copy all the files and run next
-FROM node:18-alpine AS runner
+FROM node:20-alpine AS runner
 RUN apk add --no-cache openssl
 WORKDIR /app
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -56,9 +65,9 @@ USER nextjs
 
 EXPOSE 3000
 
-ENV PORT 3000
+ENV PORT=3000
 # set hostname to localhost
-ENV HOSTNAME "0.0.0.0"
+ENV HOSTNAME=0.0.0.0
 
 # server.js is created by next build from the standalone output
 # https://nextjs.org/docs/pages/api-reference/next-config-js/output

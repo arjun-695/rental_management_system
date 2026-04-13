@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import type { JWT } from "next-auth/jwt";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import type { PrismaClient as AdapterPrismaClient } from "@prisma/client";
 import { compare } from "bcryptjs";
 
 import { prisma } from "@/lib/db";
@@ -140,8 +141,10 @@ if (googleClientId && googleClientSecret) {
   );
 }
 
+const authAdapter = PrismaAdapter(prisma as unknown as AdapterPrismaClient);
+
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  adapter: authAdapter,
   // DB sessions allow server-side revocation and security audits later.
   session: { strategy: "jwt" },
   pages: {

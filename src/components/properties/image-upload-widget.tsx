@@ -15,6 +15,8 @@ export default function ImageUploadWidget({
   onChange,
   maxFiles = 5,
 }: ImageUploadWidgetProps) {
+  const cloudinaryCloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+
   const handleUpload = (result: any) => {
     if (result.event === "success") {
       const secureUrl = result.info.secure_url;
@@ -29,32 +31,46 @@ export default function ImageUploadWidget({
   return (
     <div className="space-y-4">
       {/* Upload Button */}
-      <CldUploadWidget
-        uploadPreset="rentmanagement" // Optional unsigned preset if needed, or configured through signing
-        signatureEndpoint="/api/cloudinary/sign"
-        options={{
-          multiple: true,
-          maxFiles,
-          clientAllowedFormats: ["png", "jpeg", "jpg", "webp"],
-        }}
-        onSuccess={handleUpload}
-      >
-        {({ open }) => (
-          <button
-            type="button"
-            onClick={() => open()}
-            className="group flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-indigo-500/30 bg-background/50 py-10 transition-all hover:border-indigo-400 hover:bg-indigo-500/5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-2 focus:ring-offset-background"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-400 transition-transform group-hover:scale-110">
-              <UploadCloud className="h-6 w-6" />
-            </div>
-            <p className="font-medium text-foreground">Click to upload photos</p>
-            <p className="text-xs text-muted-foreground">
-              {maxFiles} images max (PNG, JPG, WEBP)
-            </p>
-          </button>
-        )}
-      </CldUploadWidget>
+      {cloudinaryCloudName ? (
+        <CldUploadWidget
+          uploadPreset="rentmanagement" // Optional unsigned preset if needed, or configured through signing
+          signatureEndpoint="/api/cloudinary/sign"
+          options={{
+            multiple: true,
+            maxFiles,
+            clientAllowedFormats: ["png", "jpeg", "jpg", "webp"],
+          }}
+          onSuccess={handleUpload}
+        >
+          {({ open }) => (
+            <button
+              type="button"
+              onClick={() => open()}
+              className="group flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-indigo-500/30 bg-background/50 py-10 transition-all hover:border-indigo-400 hover:bg-indigo-500/5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-2 focus:ring-offset-background"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-400 transition-transform group-hover:scale-110">
+                <UploadCloud className="h-6 w-6" />
+              </div>
+              <p className="font-medium text-foreground">Click to upload photos</p>
+              <p className="text-xs text-muted-foreground">
+                {maxFiles} images max (PNG, JPG, WEBP)
+              </p>
+            </button>
+          )}
+        </CldUploadWidget>
+      ) : (
+        <button
+          type="button"
+          disabled
+          className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/60 bg-background/40 py-10 text-muted-foreground"
+        >
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/40">
+            <UploadCloud className="h-6 w-6" />
+          </div>
+          <p className="font-medium">Cloudinary uploads are not configured</p>
+          <p className="text-xs">Set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME before building the image.</p>
+        </button>
+      )}
 
       {/* Image Preview Grid */}
       {value.length > 0 && (

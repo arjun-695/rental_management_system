@@ -4,10 +4,20 @@ import Razorpay from "razorpay";
 import { authOptions } from "@/lib/auth/auth-options";
 import { prisma } from "@/lib/db";
 
-const razorpay = new Razorpay({
-  key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID as string,
-  key_secret: process.env.RAZORPAY_KEY_SECRET as string,
-});
+let razorpayInstance: any;
+
+function getRazorpay() {
+  if (!razorpayInstance) {
+    if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      throw new Error("Razorpay environment variables missing");
+    }
+    razorpayInstance = new Razorpay({
+      key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+  }
+  return razorpayInstance;
+}
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -47,7 +57,7 @@ export async function POST(request: Request) {
       receipt: `rcpt_${booking.id}`,
     };
 
-    const order = await razorpay.orders.create(orderOptions);
+    const order = await getRazorpay().orders.create(orderOptions);
 
     if (!order) {
       return NextResponse.json({ ok: false, error: "Order creation failed" }, { status: 500 });
