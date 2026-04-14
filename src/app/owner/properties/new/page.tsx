@@ -33,47 +33,91 @@ export default function NewPropertyPage(): JSX.Element {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
+  async function onSubmit(
+    event: React.FormEvent<HTMLFormElement>,
+  ): Promise<void> {
     event.preventDefault();
     setMessage("");
     setIsSuccess(false);
     setIsSubmitting(true);
 
-    const formData = new FormData(event.currentTarget);
-    const payload = {
-      title: String(formData.get("title") ?? ""),
-      description: String(formData.get("description") ?? ""),
-      city: String(formData.get("city") ?? ""),
-      state: String(formData.get("state") ?? ""),
-      country: String(formData.get("country") ?? "India"),
-      addressLine1: String(formData.get("addressLine1") ?? ""),
-      postalCode: String(formData.get("postalCode") ?? ""),
-      type: String(formData.get("type") ?? ""),
-      bedrooms: Number(formData.get("bedrooms") ?? 0),
-      bathrooms: Number(formData.get("bathrooms") ?? 0),
-      monthlyRent: Number(formData.get("monthlyRent") ?? 0),
-      availableFrom: String(formData.get("availableFrom") ?? ""),
-      imageUrls: imageUrls,
-    };
-
     try {
+      // Validate images are uploaded
+      if (!imageUrls || imageUrls.length === 0) {
+        setMessage("Please upload at least one property image");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const formData = new FormData(event.currentTarget);
+      const payload = {
+        title: String(formData.get("title") ?? "").trim(),
+        description: String(formData.get("description") ?? "").trim(),
+        city: String(formData.get("city") ?? "").trim(),
+        state: String(formData.get("state") ?? "").trim(),
+        country: String(formData.get("country") ?? "India"),
+        addressLine1: String(formData.get("addressLine1") ?? "").trim(),
+        addressLine2: String(formData.get("addressLine2") ?? ""),
+        postalCode: String(formData.get("postalCode") ?? "").trim(),
+        type: String(formData.get("type") ?? ""),
+        bedrooms: Number(formData.get("bedrooms") ?? 0),
+        bathrooms: Number(formData.get("bathrooms") ?? 0),
+        areaSqft: formData.get("areaSqft")
+          ? Number(formData.get("areaSqft"))
+          : undefined,
+        monthlyRent: Number(formData.get("monthlyRent") ?? 0),
+        securityDeposit: formData.get("securityDeposit")
+          ? Number(formData.get("securityDeposit"))
+          : undefined,
+        availableFrom: String(formData.get("availableFrom") ?? ""),
+        imageUrls: imageUrls,
+      };
+
       const response = await fetch("/api/properties", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      const body = (await response.json()) as CreatePropertyResponse;
+      let body: CreatePropertyResponse;
 
-      if (!response.ok || !body.ok) {
-        setMessage(body.ok ? "Could not create property" : body.error);
+      try {
+        body = (await response.json()) as CreatePropertyResponse;
+      } catch (jsonError) {
+        // If JSON parsing fails, it's a server error
+        console.error("Failed to parse response:", jsonError);
+        setMessage(
+          `Server error: Response was not valid JSON. Status: ${response.status}`,
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!response.ok) {
+        setMessage(
+          `Error: ${body.ok ? "Failed to create property" : body.error || "Unknown error"}`,
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!body.ok) {
+        setMessage(body.error || "Failed to create property");
+        setIsSubmitting(false);
         return;
       }
 
       setIsSuccess(true);
-      setMessage(`Property created successfully! Reference ID: ${body.data.id}`);
+      setMessage(
+        `Property created successfully! Reference ID: ${body.data.id}`,
+      );
       setImageUrls([]);
       event.currentTarget.reset();
+    } catch (error) {
+      console.error("Form submission error:", error);
+      setMessage(
+        `Error: ${error instanceof Error ? error.message : "Unknown error occurred"}`,
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -91,7 +135,9 @@ export default function NewPropertyPage(): JSX.Element {
         </Link>
 
         <header className="mb-6 border-b border-border/50 pb-6">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Add New Property</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Add New Property
+          </h1>
           <p className="text-muted-foreground mt-1">
             List a new property for prospective tenants to discover.
           </p>
@@ -134,10 +180,13 @@ export default function NewPropertyPage(): JSX.Element {
 
           <div className="space-y-4">
             <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground">
-              <FileText className="h-5 w-5 text-emerald-400" /> Basic Information
+              <FileText className="h-5 w-5 text-emerald-400" /> Basic
+              Information
             </h3>
             <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground ml-1">Title</label>
+              <label className="text-xs font-medium text-muted-foreground ml-1">
+                Title
+              </label>
               <input
                 name="title"
                 placeholder="E.g. Cozy 2BHK in South Mumbai"
@@ -146,7 +195,9 @@ export default function NewPropertyPage(): JSX.Element {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground ml-1">Description</label>
+              <label className="text-xs font-medium text-muted-foreground ml-1">
+                Description
+              </label>
               <textarea
                 name="description"
                 rows={4}
@@ -162,7 +213,9 @@ export default function NewPropertyPage(): JSX.Element {
               <MapPin className="h-5 w-5 text-emerald-400" /> Location Details
             </h3>
             <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground ml-1">Address Line 1</label>
+              <label className="text-xs font-medium text-muted-foreground ml-1">
+                Address Line 1
+              </label>
               <input
                 name="addressLine1"
                 placeholder="Street Name, Building"
@@ -172,7 +225,9 @@ export default function NewPropertyPage(): JSX.Element {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground ml-1">City</label>
+                <label className="text-xs font-medium text-muted-foreground ml-1">
+                  City
+                </label>
                 <input
                   name="city"
                   placeholder="Mumbai"
@@ -181,7 +236,9 @@ export default function NewPropertyPage(): JSX.Element {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground ml-1">State</label>
+                <label className="text-xs font-medium text-muted-foreground ml-1">
+                  State
+                </label>
                 <input
                   name="state"
                   placeholder="Maharashtra"
@@ -190,7 +247,9 @@ export default function NewPropertyPage(): JSX.Element {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground ml-1">Postal Code</label>
+                <label className="text-xs font-medium text-muted-foreground ml-1">
+                  Postal Code
+                </label>
                 <input
                   name="postalCode"
                   placeholder="400001"
@@ -199,7 +258,9 @@ export default function NewPropertyPage(): JSX.Element {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground ml-1">Country</label>
+                <label className="text-xs font-medium text-muted-foreground ml-1">
+                  Country
+                </label>
                 <input
                   name="country"
                   placeholder="Country"
@@ -217,7 +278,9 @@ export default function NewPropertyPage(): JSX.Element {
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground ml-1">Property Type</label>
+                <label className="text-xs font-medium text-muted-foreground ml-1">
+                  Property Type
+                </label>
                 <select
                   name="type"
                   className="w-full rounded-xl border border-border/50 bg-background/50 py-2.5 px-4 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
@@ -231,7 +294,9 @@ export default function NewPropertyPage(): JSX.Element {
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground ml-1">Available From</label>
+                <label className="text-xs font-medium text-muted-foreground ml-1">
+                  Available From
+                </label>
                 <input
                   name="availableFrom"
                   type="date"
@@ -240,7 +305,9 @@ export default function NewPropertyPage(): JSX.Element {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground ml-1">Bedrooms</label>
+                <label className="text-xs font-medium text-muted-foreground ml-1">
+                  Bedrooms
+                </label>
                 <input
                   name="bedrooms"
                   type="number"
@@ -251,7 +318,9 @@ export default function NewPropertyPage(): JSX.Element {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground ml-1">Bathrooms</label>
+                <label className="text-xs font-medium text-muted-foreground ml-1">
+                  Bathrooms
+                </label>
                 <input
                   name="bathrooms"
                   type="number"
@@ -263,7 +332,9 @@ export default function NewPropertyPage(): JSX.Element {
               </div>
             </div>
             <div className="space-y-1 pt-2">
-              <label className="text-xs font-medium text-muted-foreground ml-1">Monthly Rent (Rs)</label>
+              <label className="text-xs font-medium text-muted-foreground ml-1">
+                Monthly Rent (Rs)
+              </label>
               <input
                 name="monthlyRent"
                 type="number"

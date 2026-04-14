@@ -5,6 +5,14 @@ const nextConfig: NextConfig = {
   outputFileTracingExcludes: {
     "/*": ["./next.config.ts"],
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
+    ],
+  },
 };
 
 export default nextConfig;

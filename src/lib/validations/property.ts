@@ -16,7 +16,9 @@ export const createPropertySchema = z
     areaSqft: z.coerce.number().int().min(50).max(50000).optional(),
     monthlyRent: z.coerce.number().positive().max(1_000_000),
     securityDeposit: z.coerce.number().min(0).max(10_000_000).optional(),
-    imageUrls: z.array(z.string().url()).optional().default([]),
+    imageUrls: z
+      .array(z.string().url())
+      .min(1, "At least one property image is required"),
     availableFrom: z.coerce.date(),
   })
   .strict();
@@ -32,10 +34,14 @@ export const propertySearchQuerySchema = z.object({
   type: z.enum(["APARTMENT", "HOUSE", "STUDIO", "VILLA", "PG"]).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(50).default(10),
-  sortBy: z.enum(["createdAt", "monthlyRent", "availableFrom"]).default("createdAt"),
+  sortBy: z
+    .enum(["createdAt", "monthlyRent", "availableFrom"])
+    .default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });
 
 export type CreatePropertyInput = z.infer<typeof createPropertySchema>;
 export type UpdatePropertyInput = z.infer<typeof updatePropertySchema>;
-export type PropertySearchQueryInput = z.infer<typeof propertySearchQuerySchema>;
+export type PropertySearchQueryInput = z.infer<
+  typeof propertySearchQuerySchema
+>;

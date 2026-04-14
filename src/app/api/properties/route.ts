@@ -8,7 +8,11 @@ import {
   propertySearchQuerySchema,
   type CreatePropertyInput,
 } from "@/lib/validations/property";
-import { buildPropertyWhere, buildPropertyOrderBy } from "@/lib/properties/query";
+import {
+  buildPropertyWhere,
+  buildPropertyOrderBy,
+} from "@/lib/properties/query";
+import { safeParseImageUrls } from "@/lib/utils";
 import type { AppRole } from "@/types/next-auth";
 
 function isOwnerOrAdmin(role: AppRole): boolean {
@@ -21,7 +25,10 @@ export async function GET(request: Request): Promise<Response> {
   const parsed = propertySearchQuerySchema.safeParse(raw);
 
   if (!parsed.success) {
-    return NextResponse.json({ ok: false, error: "Invalid query parameters" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "Invalid query parameters" },
+      { status: 400 },
+    );
   }
 
   const filters = parsed.data;
@@ -52,9 +59,15 @@ export async function GET(request: Request): Promise<Response> {
     prisma.property.count({ where }),
   ]);
 
+  // Safely parse imageUrls for all properties
+  const safRows = rows.map((row) => ({
+    ...row,
+    imageUrls: safeParseImageUrls(row.imageUrls),
+  }));
+
   return NextResponse.json({
     ok: true,
-    data: rows,
+    data: safRows,
     pagination: {
       page: filters.page,
       pageSize: filters.pageSize,
@@ -65,48 +78,79 @@ export async function GET(request: Request): Promise<Response> {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const session = await getServerSession(authOptions);
+  try {
+    const session = await getServerSession(authOptions);
 
-  if (!session?.user) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    if (!session?.user) {
+      return NextResponse.json(
+        { ok: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
+    if (!isOwnerOrAdmin(session.user.role)) {
+      return NextResponse.json(
+        { ok: false, error: "Forbidden" },
+        { status: 403 },
+      );
+    }
+
+    const rawBody: unknown = await request.json();
+    const parsed = createPropertySchema.safeParse(rawBody);
+
+    if (!parsed.success) {
+      const errors = parsed.error.issues
+        .map((e) => `${e.path.join(".")}: ${e.message}`)
+        .join(", ");
+      return NextResponse.json(
+        { ok: false, error: `Validation failed: ${errors}` },
+        { status: 400 },
+      );
+    }
+
+    const input: CreatePropertyInput = parsed.data;
+
+    const created = await prisma.property.create({
+      data: {
+        ownerId: session.user.id,
+        title: input.title,
+        description: input.description,
+        city: input.city,
+        state: input.state,
+        country: input.country,
+        addressLine1: input.addressLine1,
+        addressLine2: input.addressLine2,
+        postalCode: input.postalCode,
+        type: input.type,
+        bedrooms: input.bedrooms,
+        bathrooms: input.bathrooms,
+        areaSqft: input.areaSqft,
+        monthlyRent: input.monthlyRent,
+        securityDeposit: input.securityDeposit,
+        imageUrls:
+          input.imageUrls && input.imageUrls.length > 0
+            ? input.imageUrls
+            : null,
+        availableFrom: input.availableFrom,
+        status: "ACTIVE",
+      },
+      select: { id: true },
+    });
+
+    return NextResponse.json({ ok: true, data: created }, { status: 201 });
+  } catch (error) {
+    console.error("Property creation error:", error);
+
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { ok: false, error: `Server error: ${error.message}` },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json(
+      { ok: false, error: "Unknown server error occurred" },
+      { status: 500 },
+    );
   }
-
-  if (!isOwnerOrAdmin(session.user.role)) {
-    return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
-  }
-
-  const rawBody: unknown = await request.json();
-  const parsed = createPropertySchema.safeParse(rawBody);
-
-  if (!parsed.success) {
-    return NextResponse.json({ ok: false, error: "Invalid property payload" }, { status: 400 });
-  }
-
-  const input: CreatePropertyInput = parsed.data;
-
-  const created = await prisma.property.create({
-    data: {
-      ownerId: session.user.id,
-      title: input.title,
-      description: input.description,
-      city: input.city,
-      state: input.state,
-      country: input.country,
-      addressLine1: input.addressLine1,
-      addressLine2: input.addressLine2,
-      postalCode: input.postalCode,
-      type: input.type,
-      bedrooms: input.bedrooms,
-      bathrooms: input.bathrooms,
-      areaSqft: input.areaSqft,
-      monthlyRent: input.monthlyRent,
-      securityDeposit: input.securityDeposit,
-      imageUrls: input.imageUrls,
-      availableFrom: input.availableFrom,
-      status: "ACTIVE",
-    },
-    select: { id: true },
-  });
-
-  return NextResponse.json({ ok: true, data: created }, { status: 201 });
 }

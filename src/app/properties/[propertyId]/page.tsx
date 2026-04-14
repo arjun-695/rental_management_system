@@ -2,9 +2,19 @@ import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
 import { authOptions } from "@/lib/auth/auth-options";
+import { safeParseImageUrls } from "@/lib/utils";
 import CreateBookingForm from "@/components/bookings/create-booking-form";
 import AnimatedBackground from "@/components/landing/animated-background";
-import { MapPin, Home, Bed, Bath, ArrowLeft, Calendar, User, Star } from "lucide-react";
+import {
+  MapPin,
+  Home,
+  Bed,
+  Bath,
+  ArrowLeft,
+  Calendar,
+  User,
+  Star,
+} from "lucide-react";
 
 export default async function PropertyDetailsPage({
   params,
@@ -33,9 +43,9 @@ export default async function PropertyDetailsPage({
           rating: true,
           comment: true,
           createdAt: true,
-          tenant: { select: { name: true, image: true } }
+          tenant: { select: { name: true, image: true } },
         },
-        orderBy: { createdAt: "desc" }
+        orderBy: { createdAt: "desc" },
       },
       availableFrom: true,
       owner: { select: { name: true } },
@@ -47,8 +57,15 @@ export default async function PropertyDetailsPage({
       <main className="relative min-h-screen dark flex flex-col items-center justify-center">
         <AnimatedBackground />
         <div className="glass-card z-10 p-8 rounded-2xl text-center">
-          <p className="text-lg font-medium text-muted-foreground mb-4">Property not found.</p>
-          <Link href="/properties" className="text-indigo-400 hover:text-indigo-300 underline">Back to listings</Link>
+          <p className="text-lg font-medium text-muted-foreground mb-4">
+            Property not found.
+          </p>
+          <Link
+            href="/properties"
+            className="text-indigo-400 hover:text-indigo-300 underline"
+          >
+            Back to listings
+          </Link>
         </div>
       </main>
     );
@@ -60,58 +77,69 @@ export default async function PropertyDetailsPage({
     <main className="relative min-h-screen dark py-8">
       <AnimatedBackground />
       <div className="z-10 mx-auto w-full max-w-5xl px-6 animate-fade-in-up">
-        
-        <Link href="/properties" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-indigo-400 transition-colors mb-6">
+        <Link
+          href="/properties"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-indigo-400 transition-colors mb-6"
+        >
           <ArrowLeft className="h-4 w-4" /> Back to listings
         </Link>
 
         <div className="grid gap-8 md:grid-cols-3">
-          
           <div className="md:col-span-2 space-y-6">
             <div className="glass-card rounded-2xl p-8 border-indigo-500/10 shadow-xl">
-              {Array.isArray(property.imageUrls) && property.imageUrls.length > 0 ? (
+              {safeParseImageUrls(property.imageUrls).length > 0 && (
                 <div className="mb-6 space-y-4">
                   {/* Hero / First Image */}
                   <div className="relative h-[400px] w-full overflow-hidden rounded-2xl shadow-lg border border-border/10">
                     <img
-                      src={property.imageUrls[0] as string}
+                      src={safeParseImageUrls(property.imageUrls)[0]}
                       alt={property.title}
                       className="absolute inset-0 h-full w-full object-cover"
                     />
                   </div>
-                  
+
                   {/* Rest of the gallery */}
-                  {property.imageUrls.length > 1 && (
+                  {safeParseImageUrls(property.imageUrls).length > 1 && (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {(property.imageUrls as string[]).slice(1).map((url, i) => (
-                        <div key={i} className="relative aspect-square overflow-hidden rounded-xl border border-border/10">
-                          <img
-                            src={url}
-                            alt={`${property.title} room ${i + 1}`}
-                            className="absolute inset-0 h-full w-full object-cover transition-transform hover:scale-105"
-                          />
-                        </div>
-                      ))}
+                      {safeParseImageUrls(property.imageUrls)
+                        .slice(1)
+                        .map((url, i) => (
+                          <div
+                            key={i}
+                            className="relative aspect-square overflow-hidden rounded-xl border border-border/10"
+                          >
+                            <img
+                              src={url}
+                              alt={`${property.title} room ${i + 1}`}
+                              className="absolute inset-0 h-full w-full object-cover transition-transform hover:scale-105"
+                            />
+                          </div>
+                        ))}
                     </div>
                   )}
                 </div>
-              ) : null}
+              )}
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/5 px-3 py-1 text-xs font-medium text-indigo-400">
                 <Home className="h-3.5 w-3.5" /> {property.type}
               </div>
               <div className="flex flex-wrap items-center justify-between mb-2">
-                <h1 className="text-3xl font-bold tracking-tight">{property.title}</h1>
+                <h1 className="text-3xl font-bold tracking-tight">
+                  {property.title}
+                </h1>
                 {property.averageRating ? (
                   <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 text-amber-400">
-                    <span className="font-bold text-sm">{Number(property.averageRating).toFixed(1)}</span>
+                    <span className="font-bold text-sm">
+                      {Number(property.averageRating).toFixed(1)}
+                    </span>
                     <Star className="h-4 w-4 fill-current" />
                   </div>
                 ) : null}
               </div>
               <div className="flex items-center text-muted-foreground text-sm mb-6">
-                <MapPin className="mr-1.5 h-4 w-4" /> {property.city}, {property.state}
+                <MapPin className="mr-1.5 h-4 w-4" /> {property.city},{" "}
+                {property.state}
               </div>
-              
+
               <div className="flex flex-wrap gap-4 mb-8">
                 <div className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-4 py-2">
                   <Bed className="h-5 w-5 text-indigo-400" />
@@ -130,8 +158,12 @@ export default async function PropertyDetailsPage({
                 <div className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-4 py-2">
                   <Calendar className="h-5 w-5 text-emerald-400" />
                   <div>
-                    <p className="text-xs text-muted-foreground">Available from</p>
-                    <p className="font-semibold">{property.availableFrom.toLocaleDateString()}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Available from
+                    </p>
+                    <p className="font-semibold">
+                      {property.availableFrom.toLocaleDateString()}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -147,13 +179,17 @@ export default async function PropertyDetailsPage({
                     {property.owner.name[0]}
                   </div>
                   <div>
-                    <span className="block text-xs text-muted-foreground">Listed by Owner</span>
-                    <span className="font-medium text-foreground">{property.owner.name}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      Listed by Owner
+                    </span>
+                    <span className="font-medium text-foreground">
+                      {property.owner.name}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {property.reviews.length > 0 && (
+              {property.reviews && property.reviews.length > 0 && (
                 <div className="mt-8 pt-8 border-t border-border/50">
                   <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
                     <Star className="h-5 w-5 text-amber-400 fill-current" />
@@ -161,13 +197,18 @@ export default async function PropertyDetailsPage({
                   </h3>
                   <div className="space-y-6">
                     {property.reviews.map((review) => (
-                      <div key={review.id} className="rounded-xl border border-white/5 bg-white/5 p-5">
+                      <div
+                        key={review.id}
+                        className="rounded-xl border border-white/5 bg-white/5 p-5"
+                      >
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
                             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-violet-600 text-white text-[10px] font-bold">
                               {review.tenant.name[0]}
                             </div>
-                            <span className="font-medium text-sm">{review.tenant.name}</span>
+                            <span className="font-medium text-sm">
+                              {review.tenant.name}
+                            </span>
                           </div>
                           <span className="text-xs text-muted-foreground">
                             {review.createdAt.toLocaleDateString()}
@@ -175,9 +216,9 @@ export default async function PropertyDetailsPage({
                         </div>
                         <div className="flex items-center gap-1 mb-3">
                           {[1, 2, 3, 4, 5].map((star) => (
-                            <Star 
-                              key={star} 
-                              className={`h-3.5 w-3.5 ${star <= review.rating ? 'text-amber-400 fill-current' : 'text-white/10'}`} 
+                            <Star
+                              key={star}
+                              className={`h-3.5 w-3.5 ${star <= review.rating ? "text-amber-400 fill-current" : "text-white/10"}`}
                             />
                           ))}
                         </div>
@@ -209,8 +250,13 @@ export default async function PropertyDetailsPage({
                 <CreateBookingForm propertyId={property.id} />
               ) : !session?.user ? (
                 <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
-                  <p className="text-sm text-muted-foreground mb-3">Sign in as a tenant to book this property</p>
-                  <Link href="/sign-in" className="block w-full rounded-lg bg-indigo-600 py-2 text-sm font-semibold text-white transition-all hover:bg-indigo-500">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Sign in as a tenant to book this property
+                  </p>
+                  <Link
+                    href="/sign-in"
+                    className="block w-full rounded-lg bg-indigo-600 py-2 text-sm font-semibold text-white transition-all hover:bg-indigo-500"
+                  >
                     Sign In
                   </Link>
                 </div>
@@ -223,7 +269,6 @@ export default async function PropertyDetailsPage({
               )}
             </div>
           </div>
-          
         </div>
       </div>
     </main>

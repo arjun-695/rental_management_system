@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { propertySearchQuerySchema } from "@/lib/validations/property";
-import { buildPropertyOrderBy, buildPropertyWhere } from "@/lib/properties/query";
+import {
+  buildPropertyOrderBy,
+  buildPropertyWhere,
+} from "@/lib/properties/query";
+import { safeParseImageUrls } from "@/lib/utils";
 import { MapPin, Search, Filter, Home, Bed, Bath } from "lucide-react";
 import AnimatedBackground from "@/components/landing/animated-background";
 
@@ -20,7 +24,9 @@ export default async function PropertiesPage({
   });
 
   const parsed = propertySearchQuerySchema.safeParse(normalized);
-  const filters = parsed.success ? parsed.data : propertySearchQuerySchema.parse({});
+  const filters = parsed.success
+    ? parsed.data
+    : propertySearchQuerySchema.parse({});
 
   const where = buildPropertyWhere(filters);
   const orderBy = buildPropertyOrderBy(filters);
@@ -54,8 +60,12 @@ export default async function PropertiesPage({
       <AnimatedBackground />
       <div className="z-10 mx-auto w-full max-w-6xl px-6 animate-fade-in-up">
         <header className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Explore Properties</h1>
-          <p className="text-muted-foreground mt-1">Find your next perfect home from our verified listings.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Explore Properties
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Find your next perfect home from our verified listings.
+          </p>
         </header>
 
         <form className="glass-card mb-8 grid grid-cols-1 gap-4 rounded-2xl p-6 shadow-xl shadow-indigo-500/5 md:grid-cols-6 border-indigo-500/10">
@@ -97,32 +107,37 @@ export default async function PropertiesPage({
               className="w-full rounded-xl border border-border/50 bg-background/50 py-2.5 pl-9 pr-4 text-sm outline-none transition-all focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             />
           </div>
-          <button type="submit" className="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:scale-[1.02]">
+          <button
+            type="submit"
+            className="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:scale-[1.02]"
+          >
             Search
           </button>
         </form>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {rows.map((row) => (
-          <Link
-            key={row.id}
-            href={`/properties/${row.id}`}
-            className="group glass-card flex flex-col rounded-2xl p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/10 hover:border-indigo-500/30"
-          >
-            {Array.isArray(row.imageUrls) && row.imageUrls.length > 0 ? (
-              <img
-                src={row.imageUrls[0] as string}
-                alt={row.title}
-                className="mb-4 h-40 w-full rounded-xl border border-white/5 object-cover"
-                loading="lazy"
-              />
-            ) : (
-              <div className="mb-4 flex h-40 w-full items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-600/10 border border-white/5">
-                <Home className="h-10 w-10 text-indigo-400 opacity-50" />
-              </div>
-            )}
+            <Link
+              key={row.id}
+              href={`/properties/${row.id}`}
+              className="group glass-card flex flex-col rounded-2xl p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/10 hover:border-indigo-500/30"
+            >
+              {safeParseImageUrls(row.imageUrls).length > 0 ? (
+                <img
+                  src={safeParseImageUrls(row.imageUrls)[0]}
+                  alt={row.title}
+                  className="mb-4 h-40 w-full rounded-xl border border-white/5 object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="mb-4 flex h-40 w-full items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-600/10 border border-white/5">
+                  <Home className="h-10 w-10 text-indigo-400 opacity-50" />
+                </div>
+              )}
               <div className="flex-1">
-                <h2 className="text-lg font-bold group-hover:text-indigo-400 transition-colors">{row.title}</h2>
+                <h2 className="text-lg font-bold group-hover:text-indigo-400 transition-colors">
+                  {row.title}
+                </h2>
                 <div className="mt-1 flex items-center text-sm text-muted-foreground">
                   <MapPin className="mr-1 h-3.5 w-3.5" />
                   {row.city}, {row.state}

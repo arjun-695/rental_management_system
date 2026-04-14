@@ -18,9 +18,13 @@ export default function ImageUploadWidget({
   const cloudinaryCloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 
   const handleUpload = (result: any) => {
+    // Handle both single and batch uploads
     if (result.event === "success") {
       const secureUrl = result.info.secure_url;
-      onChange([...value, secureUrl]);
+      // Only add if not already in the list
+      if (!value.includes(secureUrl)) {
+        onChange([...value, secureUrl]);
+      }
     }
   };
 
@@ -33,12 +37,13 @@ export default function ImageUploadWidget({
       {/* Upload Button */}
       {cloudinaryCloudName ? (
         <CldUploadWidget
-          uploadPreset="rentmanagement" // Optional unsigned preset if needed, or configured through signing
-          signatureEndpoint="/api/cloudinary/sign"
+          uploadPreset="rentmanagement"
           options={{
             multiple: true,
             maxFiles,
+            maxFileSize: 10485760, // 10MB per file
             clientAllowedFormats: ["png", "jpeg", "jpg", "webp"],
+            maxConcurrentUploads: 3,
           }}
           onSuccess={handleUpload}
         >
@@ -46,14 +51,18 @@ export default function ImageUploadWidget({
             <button
               type="button"
               onClick={() => open()}
-              className="group flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-indigo-500/30 bg-background/50 py-10 transition-all hover:border-indigo-400 hover:bg-indigo-500/5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-2 focus:ring-offset-background"
+              disabled={value.length >= maxFiles}
+              className="group flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-indigo-500/30 bg-background/50 py-10 transition-all hover:border-indigo-400 hover:bg-indigo-500/5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-2 focus:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-400 transition-transform group-hover:scale-110">
                 <UploadCloud className="h-6 w-6" />
               </div>
-              <p className="font-medium text-foreground">Click to upload photos</p>
+              <p className="font-medium text-foreground">
+                Click to upload photos
+              </p>
               <p className="text-xs text-muted-foreground">
-                {maxFiles} images max (PNG, JPG, WEBP)
+                {value.length}/{maxFiles} uploaded (PNG, JPG, WEBP, max 10MB
+                each)
               </p>
             </button>
           )}
@@ -68,7 +77,9 @@ export default function ImageUploadWidget({
             <UploadCloud className="h-6 w-6" />
           </div>
           <p className="font-medium">Cloudinary uploads are not configured</p>
-          <p className="text-xs">Set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME before building the image.</p>
+          <p className="text-xs">
+            Set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME before building the image.
+          </p>
         </button>
       )}
 
